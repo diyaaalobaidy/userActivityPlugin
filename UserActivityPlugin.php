@@ -24,6 +24,7 @@ use APP\plugins\generic\userActivityPlugin\classes\UserActivityRecorder;
 use APP\template\TemplateManager;
 use Illuminate\Support\Facades\DB;
 use PKP\core\JSONMessage;
+use PKP\core\PKPApplication;
 use PKP\linkAction\LinkAction;
 use PKP\linkAction\request\AjaxModal;
 use PKP\linkAction\request\RedirectAction;
@@ -127,6 +128,9 @@ class UserActivityPlugin extends GenericPlugin
             // Register custom page handler (`userActivity`) for the Admin Audit Viewer
             Hook::add('LoadHandler', $this->callbackLoadHandler(...));
 
+            // Also support ComponentRouter requests if invoked via $$$call$$$
+            Hook::add('LoadComponentHandler', $this->callbackLoadComponentHandler(...));
+
             // Inject navigation link in the backend sidebar & Admin page for Site Administrators only
             Hook::add('TemplateManager::display', $this->callbackTemplateDisplay(...));
 
@@ -138,13 +142,13 @@ class UserActivityPlugin extends GenericPlugin
     }
 
     /**
-     * Route requests to `.../userActivity/{op}` to `UserActivityHandler`
+     * Route page requests `.../userActivity/{op}` to `UserActivityHandler`
      */
     public function callbackLoadHandler(string $hookName, array $args): bool
     {
         try {
             $page = $args[0] ?? '';
-            if ($page === 'userActivity') {
+            if ($page === 'userActivity' || $page === 'user-a') {
                 $args[3] = new UserActivityHandler($this);
                 return Hook::ABORT;
             }
@@ -153,6 +157,73 @@ class UserActivityPlugin extends GenericPlugin
         }
 
         return Hook::CONTINUE;
+    }
+
+    /**
+     * Route component requests (`$$$call$$$`) if triggered from component router context
+     */
+    public function callbackLoadComponentHandler(string $hookName, mixed ...$args): bool
+    {
+        try {
+            if (isset($args[0]) && is_array($args[0])) {
+                $params = &$args[0];
+                $component = &$params[0];
+                $op = &$params[1];
+                $componentInstance = &$params[2];
+            } else {
+                $component = &$args[0];
+                $op = &$args[1];
+                $componentInstance = &$args[2];
+            }
+
+            if (
+                $component === 'userActivity'
+                || $component === 'userA'
+                || $component === 'UserActivityHandler'
+                || str_ends_with((string) $component, 'UserActivityHandler')
+            ) {
+                $componentInstance = new UserActivityHandler($this);
+                return Hook::ABORT;
+            }
+        } catch (\Throwable $e) {
+            UserActivityHelper::logError('Error in callbackLoadComponentHandler', $e);
+        }
+
+        return Hook::CONTINUE;
+    }
+
+    /**
+     * Build a guaranteed Page Router URL (`.../index.php/{context}/userActivity/{op}`)
+     * regardless of whether the current request is handled by PageRouter or ComponentRouter (`$$$call$$$`).
+     */
+    public function getPageUrl($request, string $op = 'index', ?array $params = null): string
+    {
+        try {
+            $context = $request->getContext();
+            $contextPath = $context ? $context->getPath() : Application::SITE_CONTEXT_PATH;
+            $dispatcher = $request->getDispatcher();
+            if ($dispatcher) {
+                return $dispatcher->url(
+                    $request,
+                    PKPApplication::ROUTE_PAGE,
+                    $contextPath,
+                    'userActivity',
+                    $op,
+                    null,
+                    $params
+                );
+            }
+        } catch (\Throwable $e) {
+            UserActivityHelper::logError('Error in getPageUrl dispatcher', $e);
+        }
+
+        $baseUrl = rtrim($request->getBaseUrl(), '/');
+        $contextPath = $request->getContext() ? $request->getContext()->getPath() : 'index';
+        $url = "{$baseUrl}/index.php/{$contextPath}/userActivity/{$op}";
+        if (!empty($params)) {
+            $url .= '?' . http_build_query($params);
+        }
+        return $url;
     }
 
     /**
@@ -172,12 +243,7 @@ class UserActivityPlugin extends GenericPlugin
                 return Hook::CONTINUE;
             }
 
-            $router = $request->getRouter();
-            if (!method_exists($router, 'url')) {
-                return Hook::CONTINUE;
-            }
-
-            $dashboardUrl = $router->url($request, null, 'userActivity', 'index');
+            $dashboardUrl = $this->getPageUrl($request, 'index');
 
             // Add menu item into OJS 3.5 backend sidebar menu state (`menu` variable)
             $menu = $templateMgr->getState('menu');
@@ -217,11 +283,12 @@ class UserActivityPlugin extends GenericPlugin
             }
 
             $router = $request->getRouter();
+            $dashboardUrl = $this->getPageUrl($request, 'index');
 
-            // 1. Direct link to full-page Audit Dashboard
+            // 1. Direct link to full-page Audit Dashboard (using explicit ROUTE_PAGE URL)
             $dashboardAction = new LinkAction(
                 'openAuditDashboard',
-                new RedirectAction($router->url($request, null, 'userActivity', 'index')),
+                new RedirectAction($dashboardUrl),
                 UserActivityHelper::translate(
                     'plugins.generic.userActivityPlugin.openDashboard',
                     [],
@@ -292,10 +359,9 @@ class UserActivityPlugin extends GenericPlugin
             if ($verb === 'summary') {
                 $handler = new UserActivityHandler($this);
                 $stats = $handler->getSummaryStats();
-                $router = $request->getRouter();
-                $dashboardUrl = $router->url($request, null, 'userActivity', 'index');
-                $exportCsvUrl = $router->url($request, null, 'userActivity', 'exportCsv');
-                $exportJsonUrl = $router->url($request, null, 'userActivity', 'exportJson');
+                $dashboardUrl = $this->getPageUrl($request, 'index');
+                $exportCsvUrl = $this->getPageUrl($request, 'exportCsv');
+                $exportJsonUrl = $this->getPageUrl($request, 'exportJson');
 
                 $recentLogs = DB::table('user_activity_logs')
                     ->orderByDesc('activity_id')

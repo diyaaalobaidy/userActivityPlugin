@@ -133,13 +133,12 @@ class UserActivityHandler extends Handler
         // Build initial page of logs
         $queryResult = $this->queryLogs($request, 1, 25);
 
-        $router = $request->getRouter();
         $apiUrls = [
-            'fetchLogs' => $router->url($request, null, 'userActivity', 'fetchLogs'),
-            'viewDetails' => $router->url($request, null, 'userActivity', 'viewDetails'),
-            'exportCsv' => $router->url($request, null, 'userActivity', 'exportCsv'),
-            'exportJson' => $router->url($request, null, 'userActivity', 'exportJson'),
-            'purgeLogs' => $router->url($request, null, 'userActivity', 'purgeLogs'),
+            'fetchLogs' => $plugin->getPageUrl($request, 'fetchLogs'),
+            'viewDetails' => $plugin->getPageUrl($request, 'viewDetails'),
+            'exportCsv' => $plugin->getPageUrl($request, 'exportCsv'),
+            'exportJson' => $plugin->getPageUrl($request, 'exportJson'),
+            'purgeLogs' => $plugin->getPageUrl($request, 'purgeLogs'),
         ];
 
         $templateMgr->assign([
@@ -153,8 +152,13 @@ class UserActivityHandler extends Handler
             'isModal' => (bool) $request->getUserVar('modal'),
         ]);
 
+        // If invoked via ComponentRouter ($$$call$$$) without modal flag, redirect cleanly to the PageRouter URL
         if ($request->getUserVar('modal')) {
             return new JSONMessage(true, $templateMgr->fetch($plugin->getTemplateResource('dashboardModal.tpl')));
+        }
+        if (str_contains((string) ($_SERVER['REQUEST_URI'] ?? ''), '$$$call$$$')) {
+            $request->redirectUrl($plugin->getPageUrl($request, 'index'));
+            return;
         }
 
         return $templateMgr->display($plugin->getTemplateResource('dashboard.tpl'));
