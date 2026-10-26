@@ -1,0 +1,184 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: userActivityPlugin 1.0.0.0\n"
+"Report-Msgid-Bugs-To: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ar\n"
+
+msgid "plugins.generic.userActivityPlugin.displayName"
+msgstr "ملحق نظام مراقبة نشاط المستخدمين وتدقيق قاعدة البيانات"
+
+msgid "plugins.generic.userActivityPlugin.description"
+msgstr "ملحق أمني وتدقيقي شامل على مستوى النظام (خاص بمدير النظام فقط) يقوم بتسجيل وعرض كافة أنشطة المستخدمين بدءاً من تسجيل الدخول والخروج وحتى أي عملية إضافة أو تعديل أو حذف تتم على قاعدة البيانات."
+
+msgid "plugins.generic.userActivityPlugin.menuName"
+msgstr "سجل نشاط المستخدمين وقاعدة البيانات"
+
+msgid "plugins.generic.userActivityPlugin.openDashboard"
+msgstr "سجل أنشطة المستخدمين وتدقيق قاعدة البيانات"
+
+msgid "plugins.generic.userActivityPlugin.openFullDashboard"
+msgstr "فتح لوحة التدقيق الكاملة"
+
+msgid "plugins.generic.userActivityPlugin.quickSummary"
+msgstr "ملخص التدقيق السريع"
+
+msgid "plugins.generic.userActivityPlugin.adminOnlyBadge"
+msgstr "لمدير النظام فقط (Site Admin)"
+
+msgid "plugins.generic.userActivityPlugin.adminOnlyError"
+msgstr "تم رفض الوصول: يقتصر الوصول إلى ملحق مراقبة أنشطة المستخدمين وقاعدة البيانات على مديري النظام فقط."
+
+msgid "plugins.generic.userActivityPlugin.pageTitle"
+msgstr "سجل نشاط المستخدمين وتدقيق قاعدة البيانات الشامل"
+
+msgid "plugins.generic.userActivityPlugin.pageSubtitle"
+msgstr "سجل تدقيق فوري وشامل لكافة عمليات تسجيل الدخول والخروج ومحاولات الدخول الفاشلة وجميع عمليات الإضافة (INSERT) والتعديل (UPDATE) والحذف (DELETE) على قاعدة البيانات."
+
+msgid "plugins.generic.userActivityPlugin.refresh"
+msgstr "تحديث"
+
+msgid "plugins.generic.userActivityPlugin.exportCsv"
+msgstr "تصدير CSV"
+
+msgid "plugins.generic.userActivityPlugin.exportJson"
+msgstr "تصدير JSON"
+
+msgid "plugins.generic.userActivityPlugin.retentionPurge"
+msgstr "إدارة الاحتفاظ بالسجلات"
+
+msgid "plugins.generic.userActivityPlugin.stat.totalEvents"
+msgstr "إجمالي الأحداث المسجلة"
+
+msgid "plugins.generic.userActivityPlugin.stat.todayEvents"
+msgstr "أحداث اليوم"
+
+msgid "plugins.generic.userActivityPlugin.stat.authEvents"
+msgstr "عمليات الدخول والخروج"
+
+msgid "plugins.generic.userActivityPlugin.stat.failedLogins"
+msgstr "محاولات الدخول الفاشلة"
+
+msgid "plugins.generic.userActivityPlugin.stat.dbMutations"
+msgstr "عمليات قاعدة البيانات"
+
+msgid "plugins.generic.userActivityPlugin.stat.activeUsers"
+msgstr "المستخدمون النشطون"
+
+msgid "plugins.generic.userActivityPlugin.category.auth"
+msgstr "المصادقة والدخول"
+
+msgid "plugins.generic.userActivityPlugin.category.user"
+msgstr "المستخدمون والأدوار"
+
+msgid "plugins.generic.userActivityPlugin.category.submission"
+msgstr "طلبات النشر"
+
+msgid "plugins.generic.userActivityPlugin.category.publication"
+msgstr "المنشورات والأعداد"
+
+msgid "plugins.generic.userActivityPlugin.category.review"
+msgstr "التحكيم والقرارات"
+
+msgid "plugins.generic.userActivityPlugin.category.file"
+msgstr "الملفات"
+
+msgid "plugins.generic.userActivityPlugin.category.email"
+msgstr "الرسائل والإشعارات"
+
+msgid "plugins.generic.userActivityPlugin.category.settings"
+msgstr "الإعدادات والنظام"
+
+msgid "plugins.generic.userActivityPlugin.category.database"
+msgstr "عملية قاعدة بيانات"
+
+msgid "plugins.generic.userActivityPlugin.filter.searchPlaceholder"
+msgstr "بحث بالمستخدم، الجدول، معرف السجل، عنوان IP، استعلام SQL، أو القيم..."
+
+msgid "plugins.generic.userActivityPlugin.filter.category"
+msgstr "فئة الحدث"
+
+msgid "plugins.generic.userActivityPlugin.filter.allCategories"
+msgstr "جميع الفئات"
+
+msgid "plugins.generic.userActivityPlugin.filter.operation"
+msgstr "العملية"
+
+msgid "plugins.generic.userActivityPlugin.filter.allOperations"
+msgstr "جميع العمليات"
+
+msgid "plugins.generic.userActivityPlugin.filter.table"
+msgstr "جدول قاعدة البيانات"
+
+msgid "plugins.generic.userActivityPlugin.filter.allTables"
+msgstr "جميع الجداول"
+
+msgid "plugins.generic.userActivityPlugin.filter.allUsers"
+msgstr "جميع المستخدمين"
+
+msgid "plugins.generic.userActivityPlugin.filter.systemOrGuest"
+msgstr "النظام / زائر غير مسجل"
+
+msgid "plugins.generic.userActivityPlugin.filter.journalContext"
+msgstr "المجلة / السياق"
+
+msgid "plugins.generic.userActivityPlugin.filter.allContexts"
+msgstr "جميع المجلات والنظام"
+
+msgid "plugins.generic.userActivityPlugin.filter.ipAddress"
+msgstr "عنوان IP"
+
+msgid "plugins.generic.userActivityPlugin.filter.dateFrom"
+msgstr "من تاريخ"
+
+msgid "plugins.generic.userActivityPlugin.filter.dateTo"
+msgstr "إلى تاريخ"
+
+msgid "plugins.generic.userActivityPlugin.filter.perPage"
+msgstr "عدد الصفوف"
+
+msgid "plugins.generic.userActivityPlugin.filter.reset"
+msgstr "إعادة ضبط"
+
+msgid "plugins.generic.userActivityPlugin.table.category"
+msgstr "الفئة"
+
+msgid "plugins.generic.userActivityPlugin.table.operation"
+msgstr "العملية"
+
+msgid "plugins.generic.userActivityPlugin.table.dbTableRecord"
+msgstr "الجدول والسجل"
+
+msgid "plugins.generic.userActivityPlugin.table.actionSummary"
+msgstr "ملخص النشاط والرابط"
+
+msgid "plugins.generic.userActivityPlugin.table.ipContext"
+msgstr "عنوان IP والمجلة"
+
+msgid "plugins.generic.userActivityPlugin.inspect"
+msgstr "فحص التفاصيل"
+
+msgid "plugins.generic.userActivityPlugin.noLogsFound"
+msgstr "لا توجد سجلات أنشطة مطابقة لمعايير البحث."
+
+msgid "plugins.generic.userActivityPlugin.modalTitle"
+msgstr "الفحص التفصيلي الكامل لسجل النشاط وقاعدة البيانات"
+
+msgid "plugins.generic.userActivityPlugin.copyJson"
+msgstr "نسخ بيانات JSON"
+
+msgid "plugins.generic.userActivityPlugin.purgeDescription"
+msgstr "اختر الفترة الزمنية أدناه لحذف سجلات التدقيق الأقدم نهائياً من جدول user_activity_logs."
+
+msgid "plugins.generic.userActivityPlugin.purgeOlderThan"
+msgstr "حذف السجلات"
+
+msgid "plugins.generic.userActivityPlugin.confirmPurge"
+msgstr "تأكيد حذف السجلات"
+
+msgid "plugins.generic.userActivityPlugin.recentActivities"
+msgstr "أحدث 10 أنشطة في النظام وقاعدة البيانات"

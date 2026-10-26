@@ -1,0 +1,184 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: userActivityPlugin 1.0.0.0\n"
+"Report-Msgid-Bugs-To: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: en\n"
+
+msgid "plugins.generic.userActivityPlugin.displayName"
+msgstr "User Activity & Database Audit System Plugin"
+
+msgid "plugins.generic.userActivityPlugin.description"
+msgstr "System-wide security and audit plugin (Admin Only) that records and displays all user activities from login/logout to every INSERT, UPDATE, and DELETE action performed on the database."
+
+msgid "plugins.generic.userActivityPlugin.menuName"
+msgstr "User Activity & DB Audit"
+
+msgid "plugins.generic.userActivityPlugin.openDashboard"
+msgstr "Activity & Database Audit Log"
+
+msgid "plugins.generic.userActivityPlugin.openFullDashboard"
+msgstr "Open Full Audit Dashboard"
+
+msgid "plugins.generic.userActivityPlugin.quickSummary"
+msgstr "Quick Audit Summary"
+
+msgid "plugins.generic.userActivityPlugin.adminOnlyBadge"
+msgstr "Site Administrator Only"
+
+msgid "plugins.generic.userActivityPlugin.adminOnlyError"
+msgstr "Access Denied: Only Site Administrators can access the User Activity & Database Audit Plugin."
+
+msgid "plugins.generic.userActivityPlugin.pageTitle"
+msgstr "System User Activity & Database Audit Log"
+
+msgid "plugins.generic.userActivityPlugin.pageSubtitle"
+msgstr "Complete real-time audit trail of all user logins, logouts, failed authentication attempts, and every database INSERT, UPDATE, and DELETE action across OJS."
+
+msgid "plugins.generic.userActivityPlugin.refresh"
+msgstr "Refresh"
+
+msgid "plugins.generic.userActivityPlugin.exportCsv"
+msgstr "Export CSV"
+
+msgid "plugins.generic.userActivityPlugin.exportJson"
+msgstr "Export JSON"
+
+msgid "plugins.generic.userActivityPlugin.retentionPurge"
+msgstr "Manage Log Retention"
+
+msgid "plugins.generic.userActivityPlugin.stat.totalEvents"
+msgstr "Total Recorded Events"
+
+msgid "plugins.generic.userActivityPlugin.stat.todayEvents"
+msgstr "Events Recorded Today"
+
+msgid "plugins.generic.userActivityPlugin.stat.authEvents"
+msgstr "Logins & Logouts"
+
+msgid "plugins.generic.userActivityPlugin.stat.failedLogins"
+msgstr "Failed Login Attempts"
+
+msgid "plugins.generic.userActivityPlugin.stat.dbMutations"
+msgstr "Database Mutations"
+
+msgid "plugins.generic.userActivityPlugin.stat.activeUsers"
+msgstr "Distinct Active Users"
+
+msgid "plugins.generic.userActivityPlugin.category.auth"
+msgstr "Authentication"
+
+msgid "plugins.generic.userActivityPlugin.category.user"
+msgstr "Users & Roles"
+
+msgid "plugins.generic.userActivityPlugin.category.submission"
+msgstr "Submissions"
+
+msgid "plugins.generic.userActivityPlugin.category.publication"
+msgstr "Publications & Issues"
+
+msgid "plugins.generic.userActivityPlugin.category.review"
+msgstr "Reviews & Decisions"
+
+msgid "plugins.generic.userActivityPlugin.category.file"
+msgstr "Files"
+
+msgid "plugins.generic.userActivityPlugin.category.email"
+msgstr "Emails & Notices"
+
+msgid "plugins.generic.userActivityPlugin.category.settings"
+msgstr "Settings & System"
+
+msgid "plugins.generic.userActivityPlugin.category.database"
+msgstr "Database Action"
+
+msgid "plugins.generic.userActivityPlugin.filter.searchPlaceholder"
+msgstr "Search user, table, record ID, IP, SQL, or field values..."
+
+msgid "plugins.generic.userActivityPlugin.filter.category"
+msgstr "Event Category"
+
+msgid "plugins.generic.userActivityPlugin.filter.allCategories"
+msgstr "All Categories"
+
+msgid "plugins.generic.userActivityPlugin.filter.operation"
+msgstr "Operation"
+
+msgid "plugins.generic.userActivityPlugin.filter.allOperations"
+msgstr "All Operations"
+
+msgid "plugins.generic.userActivityPlugin.filter.table"
+msgstr "Database Table"
+
+msgid "plugins.generic.userActivityPlugin.filter.allTables"
+msgstr "All Database Tables"
+
+msgid "plugins.generic.userActivityPlugin.filter.allUsers"
+msgstr "All Users"
+
+msgid "plugins.generic.userActivityPlugin.filter.systemOrGuest"
+msgstr "System / Guest (Unauthenticated)"
+
+msgid "plugins.generic.userActivityPlugin.filter.journalContext"
+msgstr "Journal / Context"
+
+msgid "plugins.generic.userActivityPlugin.filter.allContexts"
+msgstr "All Journals & Site"
+
+msgid "plugins.generic.userActivityPlugin.filter.ipAddress"
+msgstr "IP Address"
+
+msgid "plugins.generic.userActivityPlugin.filter.dateFrom"
+msgstr "From Date"
+
+msgid "plugins.generic.userActivityPlugin.filter.dateTo"
+msgstr "To Date"
+
+msgid "plugins.generic.userActivityPlugin.filter.perPage"
+msgstr "Rows / Page"
+
+msgid "plugins.generic.userActivityPlugin.filter.reset"
+msgstr "Reset"
+
+msgid "plugins.generic.userActivityPlugin.table.category"
+msgstr "Category"
+
+msgid "plugins.generic.userActivityPlugin.table.operation"
+msgstr "Operation"
+
+msgid "plugins.generic.userActivityPlugin.table.dbTableRecord"
+msgstr "Table & Record"
+
+msgid "plugins.generic.userActivityPlugin.table.actionSummary"
+msgstr "Activity & Endpoint Summary"
+
+msgid "plugins.generic.userActivityPlugin.table.ipContext"
+msgstr "IP & Context"
+
+msgid "plugins.generic.userActivityPlugin.inspect"
+msgstr "Inspect"
+
+msgid "plugins.generic.userActivityPlugin.noLogsFound"
+msgstr "No matching user or database activity records found."
+
+msgid "plugins.generic.userActivityPlugin.modalTitle"
+msgstr "Complete Activity & Database Record Inspection"
+
+msgid "plugins.generic.userActivityPlugin.copyJson"
+msgstr "Copy Full JSON"
+
+msgid "plugins.generic.userActivityPlugin.purgeDescription"
+msgstr "Select the retention threshold below to permanently remove older audit records from the user_activity_logs table."
+
+msgid "plugins.generic.userActivityPlugin.purgeOlderThan"
+msgstr "Delete Records"
+
+msgid "plugins.generic.userActivityPlugin.confirmPurge"
+msgstr "Purge Selected Logs"
+
+msgid "plugins.generic.userActivityPlugin.recentActivities"
+msgstr "Most Recent 10 System & Database Activities"

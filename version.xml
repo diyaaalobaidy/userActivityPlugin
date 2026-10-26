@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE version SYSTEM "../../../lib/pkp/dtd/pluginVersion.dtd">
+<!--
+  * plugins/generic/userActivityPlugin/version.xml
+  *
+  * Copyright (c) 2026
+  * Distributed under the GNU GPL v3.
+  *
+  * Plugin version information for User Activity & Database Audit Plugin (OJS 3.5).
+  -->
+<version>
+	<application>userActivityPlugin</application>
+	<type>plugins.generic</type>
+	<release>1.0.0.0</release>
+	<date>2026-10-26</date>
+	<lazy-load>1</lazy-load>
+	<sitewide>1</sitewide>
+	<class>UserActivityPlugin</class>
+</version>
