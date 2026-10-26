@@ -165,6 +165,50 @@ class UserActivityHandler extends Handler
     }
 
     /**
+     * Render the interactive dashboard inside an AjaxModal (when opened via Plugin Gallery manage verb)
+     */
+    public function renderModalDashboard($request): JSONMessage
+    {
+        $this->assertAdminOrAbort($request);
+        UserActivityHelper::ensureTableExists();
+        UserActivityRecorder::flushPendingLogs();
+
+        $plugin = $this->getPlugin();
+        $templateMgr = TemplateManager::getManager($request);
+
+        $baseUrl = $request->getBaseUrl();
+        $pluginUrl = $baseUrl . '/' . $plugin->getPluginPath();
+
+        $stats = $this->getSummaryStats();
+        $filterOptions = $this->getFilterOptions();
+        $queryResult = $this->queryLogs($request, 1, 25);
+
+        $apiUrls = [
+            'fetchLogs' => $plugin->getPageUrl($request, 'fetchLogs'),
+            'viewDetails' => $plugin->getPageUrl($request, 'viewDetails'),
+            'exportCsv' => $plugin->getPageUrl($request, 'exportCsv'),
+            'exportJson' => $plugin->getPageUrl($request, 'exportJson'),
+            'purgeLogs' => $plugin->getPageUrl($request, 'purgeLogs'),
+        ];
+
+        $templateMgr->assign([
+            'pageTitle' => UserActivityHelper::translate('plugins.generic.userActivityPlugin.pageTitle', [], 'System User Activity & Database Audit Log'),
+            'stats' => $stats,
+            'filterOptions' => $filterOptions,
+            'initialLogs' => $queryResult['items'],
+            'pagination' => $queryResult['pagination'],
+            'apiUrls' => $apiUrls,
+            'apiUrlsJson' => json_encode($apiUrls, JSON_UNESCAPED_SLASHES),
+            'pluginCssUrl' => $pluginUrl . '/css/userActivity.css',
+            'pluginJsUrl' => $pluginUrl . '/js/userActivity.js',
+            'fullPageUrl' => $plugin->getPageUrl($request, 'index'),
+            'isModal' => true,
+        ]);
+
+        return new JSONMessage(true, $templateMgr->fetch($plugin->getTemplateResource('dashboardModal.tpl')));
+    }
+
+    /**
      * AJAX endpoint: Fetch filtered & paginated logs + live summary stats
      */
     public function fetchLogs($args, $request)

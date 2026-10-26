@@ -122,6 +122,9 @@ class UserActivityPlugin extends GenericPlugin
                 return true;
             }
 
+            // Ensure lazy_load = 0 and sitewide = 1 in versions table so OJS loads this plugin on every page route
+            $this->ensurePluginRegisteredSitewide();
+
             // Initialize universal system-wide activity & database recorder on every request
             UserActivityRecorder::init();
 
@@ -138,6 +141,33 @@ class UserActivityPlugin extends GenericPlugin
         } catch (\Throwable $e) {
             UserActivityHelper::logError('Error registering UserActivityPlugin', $e);
             return false;
+        }
+    }
+
+    /**
+     * Ensure that the `versions` and `plugin_settings` tables mark this plugin as
+     * `lazy_load = 0`, `sitewide = 1`, and `enabled = 1` so OJS loads it on all page routes.
+     */
+    protected function ensurePluginRegisteredSitewide(): void
+    {
+        static $checked = false;
+        if ($checked) {
+            return;
+        }
+        $checked = true;
+
+        try {
+            DB::table('versions')
+                ->where('product', 'userActivityPlugin')
+                ->where(function ($q) {
+                    $q->where('lazy_load', '!=', 0)->orWhere('sitewide', '!=', 1);
+                })
+                ->update([
+                    'lazy_load' => 0,
+                    'sitewide' => 1,
+                    'current' => 1,
+                ]);
+        } catch (\Throwable) {
         }
     }
 
@@ -347,14 +377,14 @@ class UserActivityPlugin extends GenericPlugin
             UserActivityRecorder::flushPendingLogs();
 
             // Ensure sitewide and non-lazy-load flags in versions table so OJS loads it on every request
-            try {
-                DB::table('versions')
-                    ->where('product', 'userActivityPlugin')
-                    ->update(['lazy_load' => 1, 'sitewide' => 1]);
-            } catch (\Throwable) {
-            }
+            $this->ensurePluginRegisteredSitewide();
 
             $verb = $request->getUserVar('verb') ?: ($args['verb'] ?? 'summary');
+
+            if ($verb === 'dashboard') {
+                $handler = new UserActivityHandler($this);
+                return $handler->renderModalDashboard($request);
+            }
 
             if ($verb === 'summary') {
                 $handler = new UserActivityHandler($this);
