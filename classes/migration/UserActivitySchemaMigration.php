@@ -65,7 +65,44 @@ class UserActivitySchemaMigration extends Migration
                 $table->index(['operation'], 'ual_operation_idx');
                 $table->index(['ip_address'], 'ual_ip_idx');
                 $table->index(['created_at'], 'ual_created_at_idx');
+
+                // High-performance composite indexes for filtered pagination and sorting
+                $table->index(['created_at', 'activity_id'], 'ual_created_activity_idx');
+                $table->index(['event_category', 'activity_id'], 'ual_category_activity_idx');
+                $table->index(['operation', 'activity_id'], 'ual_operation_activity_idx');
+                $table->index(['table_name', 'activity_id'], 'ual_table_activity_idx');
+                $table->index(['user_id', 'activity_id'], 'ual_user_activity_idx');
             });
+        } else {
+            // If table already exists, safely add any missing composite indexes
+            self::ensurePerformanceIndexes();
+        }
+    }
+
+    /**
+     * Safely add composite indexes to existing table
+     */
+    public static function ensurePerformanceIndexes(): void
+    {
+        try {
+            $compositeIndexes = [
+                'ual_created_activity_idx' => ['created_at', 'activity_id'],
+                'ual_category_activity_idx' => ['event_category', 'activity_id'],
+                'ual_operation_activity_idx' => ['operation', 'activity_id'],
+                'ual_table_activity_idx' => ['table_name', 'activity_id'],
+                'ual_user_activity_idx' => ['user_id', 'activity_id'],
+            ];
+
+            foreach ($compositeIndexes as $indexName => $columns) {
+                try {
+                    Schema::table('user_activity_logs', function (Blueprint $table) use ($indexName, $columns) {
+                        $table->index($columns, $indexName);
+                    });
+                } catch (\Throwable) {
+                    // Index already exists or cannot be created, ignore safely
+                }
+            }
+        } catch (\Throwable) {
         }
     }
 

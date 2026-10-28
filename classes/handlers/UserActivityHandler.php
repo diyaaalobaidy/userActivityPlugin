@@ -415,11 +415,20 @@ class UserActivityHandler extends Handler
         ]);
         UserActivityRecorder::flushPendingLogs();
 
+        // Invalidate cached summary stats and filter options
+        if (class_exists(\Illuminate\Support\Facades\Cache::class)) {
+            try {
+                \Illuminate\Support\Facades\Cache::forget('ua_summary_stats');
+                \Illuminate\Support\Facades\Cache::forget('ua_filter_options');
+            } catch (\Throwable) {
+            }
+        }
+
         header('Content-Type: application/json; charset=utf-8');
         echo json_encode([
             'status' => true,
             'deletedCount' => $deletedCount,
-            'stats' => $this->getSummaryStats(),
+            'stats' => $this->getSummaryStats(true),
         ]);
         exit;
     }
@@ -498,10 +507,7 @@ class UserActivityHandler extends Handler
                     ->orWhere('record_id', 'like', $like)
                     ->orWhere('ip_address', 'like', $like)
                     ->orWhere('event_type', 'like', $like)
-                    ->orWhere('request_url', 'like', $like)
-                    ->orWhere('new_values', 'like', $like)
-                    ->orWhere('old_values', 'like', $like)
-                    ->orWhere('sql_query', 'like', $like);
+                    ->orWhere('request_url', 'like', $like);
             });
         }
 
@@ -520,7 +526,17 @@ class UserActivityHandler extends Handler
             $page = min($page, $totalPages);
             $offset = ($page - 1) * $perPage;
 
+            // Select only columns needed for the list view to avoid loading multi-megabyte JSON/SQL text blobs
             $rows = $builder
+                ->select([
+                    'activity_id', 'user_id', 'username', 'user_full_name', 'user_email',
+                    'user_roles', 'context_id', 'context_path', 'session_id', 'ip_address',
+                    'user_agent', 'event_category', 'event_type', 'action_summary',
+                    'table_name', 'operation', 'record_id', 'http_method', 'request_url',
+                    'created_at',
+                    DB::raw('(old_values IS NOT NULL OR new_values IS NOT NULL) AS has_diff'),
+                    DB::raw('(sql_query IS NOT NULL AND sql_query != "") AS has_sql'),
+                ])
                 ->orderByDesc('activity_id')
                 ->offset($offset)
                 ->limit($perPage)
@@ -567,10 +583,13 @@ class UserActivityHandler extends Handler
         $opBadge = UserActivityHelper::getOperationBadge($row->operation);
         $humanTable = $row->table_name ? UserActivityHelper::formatTableName((string) $row->table_name) : '-';
 
-        $oldVals = $row->old_values ? json_decode((string) $row->old_values, true) : null;
-        $newVals = $row->new_values ? json_decode((string) $row->new_values, true) : null;
-        $whereVals = $row->where_conditions ? json_decode((string) $row->where_conditions, true) : null;
-        $metadata = $row->metadata ? json_decode((string) $row->metadata, true) : null;
+        $hasDiff = isset($row->has_diff)
+            ? (bool) $row->has_diff
+            : (!empty($row->old_values) || !empty($row->new_values));
+
+        $hasSql = isset($row->has_sql)
+            ? (bool) $row->has_sql
+            : (!empty($row->sql_query));
 
         $item = [
             'activityId' => (int) $row->activity_id,
@@ -596,19 +615,24 @@ class UserActivityHandler extends Handler
             'httpMethod' => $row->http_method ?: '',
             'requestUrl' => $row->request_url ?: '',
             'createdAt' => $row->created_at,
-            'hasDiff' => !empty($oldVals) || !empty($newVals),
-            'hasSql' => !empty($row->sql_query),
+            'hasDiff' => $hasDiff,
+            'hasSql' => $hasSql,
         ];
 
         if ($includeFullPayloads) {
+            $oldVals = isset($row->old_values) && $row->old_values ? json_decode((string) $row->old_values, true) : null;
+            $newVals = isset($row->new_values) && $row->new_values ? json_decode((string) $row->new_values, true) : null;
+            $whereVals = isset($row->where_conditions) && $row->where_conditions ? json_decode((string) $row->where_conditions, true) : null;
+            $metadata = isset($row->metadata) && $row->metadata ? json_decode((string) $row->metadata, true) : null;
+
             $item['oldValues'] = $oldVals;
             $item['newValues'] = $newVals;
             $item['whereConditions'] = $whereVals;
-            $item['oldValuesRaw'] = $row->old_values ? json_encode($oldVals, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : null;
-            $item['newValuesRaw'] = $row->new_values ? json_encode($newVals, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : null;
-            $item['whereConditionsRaw'] = $row->where_conditions ? json_encode($whereVals, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : null;
-            $item['sqlQuery'] = $row->sql_query;
-            $item['requestPayload'] = $row->request_payload;
+            $item['oldValuesRaw'] = isset($row->old_values) && $row->old_values ? json_encode($oldVals, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : null;
+            $item['newValuesRaw'] = isset($row->new_values) && $row->new_values ? json_encode($newVals, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : null;
+            $item['whereConditionsRaw'] = isset($row->where_conditions) && $row->where_conditions ? json_encode($whereVals, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : null;
+            $item['sqlQuery'] = $row->sql_query ?? null;
+            $item['requestPayload'] = $row->request_payload ?? null;
             $item['metadata'] = $metadata;
             $item['metadataRaw'] = $metadata ? json_encode($metadata, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : null;
         }
@@ -619,44 +643,52 @@ class UserActivityHandler extends Handler
     /**
      * Get live summary counters for the top dashboard cards
      */
-    public function getSummaryStats(): array
+    public function getSummaryStats(bool $bypassCache = false): array
     {
         try {
-            $total = DB::table('user_activity_logs')->count();
+            if (!$bypassCache && class_exists(\Illuminate\Support\Facades\Cache::class)) {
+                try {
+                    $cached = \Illuminate\Support\Facades\Cache::get('ua_summary_stats');
+                    if (is_array($cached) && !empty($cached)) {
+                        return $cached;
+                    }
+                } catch (\Throwable) {
+                }
+            }
+
             $todayStart = date('Y-m-d 00:00:00');
-            $todayCount = DB::table('user_activity_logs')->where('created_at', '>=', $todayStart)->count();
 
-            $loginsCount = DB::table('user_activity_logs')
-                ->whereIn('operation', ['LOGIN', 'LOGOUT'])
-                ->count();
+            // Single-pass conditional aggregation instead of 7 separate table-scanning queries
+            $row = DB::table('user_activity_logs')
+                ->selectRaw("
+                    COUNT(*) as total,
+                    COUNT(CASE WHEN created_at >= ? THEN 1 END) as today,
+                    COUNT(CASE WHEN operation IN ('LOGIN', 'LOGOUT') THEN 1 END) as logins,
+                    COUNT(CASE WHEN operation = 'LOGIN_FAILED' THEN 1 END) as failedLogins,
+                    COUNT(CASE WHEN operation IN ('INSERT', 'UPDATE', 'DELETE', 'REPLACE') THEN 1 END) as dbMutations,
+                    COUNT(DISTINCT user_id) as activeUsers,
+                    COUNT(DISTINCT table_name) as distinctTables
+                ", [$todayStart])
+                ->first();
 
-            $failedLoginsCount = DB::table('user_activity_logs')
-                ->where('operation', 'LOGIN_FAILED')
-                ->count();
-
-            $dbMutationsCount = DB::table('user_activity_logs')
-                ->whereIn('operation', ['INSERT', 'UPDATE', 'DELETE', 'REPLACE'])
-                ->count();
-
-            $activeUsersCount = DB::table('user_activity_logs')
-                ->whereNotNull('user_id')
-                ->distinct('user_id')
-                ->count('user_id');
-
-            $distinctTablesCount = DB::table('user_activity_logs')
-                ->whereNotNull('table_name')
-                ->distinct('table_name')
-                ->count('table_name');
-
-            return [
-                'total' => $total,
-                'today' => $todayCount,
-                'logins' => $loginsCount,
-                'failedLogins' => $failedLoginsCount,
-                'dbMutations' => $dbMutationsCount,
-                'activeUsers' => $activeUsersCount,
-                'distinctTables' => $distinctTablesCount,
+            $stats = [
+                'total' => (int) ($row->total ?? 0),
+                'today' => (int) ($row->today ?? 0),
+                'logins' => (int) ($row->logins ?? 0),
+                'failedLogins' => (int) ($row->failedLogins ?? 0),
+                'dbMutations' => (int) ($row->dbMutations ?? 0),
+                'activeUsers' => (int) ($row->activeUsers ?? 0),
+                'distinctTables' => (int) ($row->distinctTables ?? 0),
             ];
+
+            if (class_exists(\Illuminate\Support\Facades\Cache::class)) {
+                try {
+                    \Illuminate\Support\Facades\Cache::put('ua_summary_stats', $stats, 45);
+                } catch (\Throwable) {
+                }
+            }
+
+            return $stats;
         } catch (\Throwable $e) {
             UserActivityHelper::logError('getSummaryStats error', $e);
             return [
@@ -677,14 +709,30 @@ class UserActivityHandler extends Handler
     protected function getFilterOptions(): array
     {
         try {
-            $tables = DB::table('user_activity_logs')
-                ->whereNotNull('table_name')
-                ->where('table_name', '!=', '')
-                ->select('table_name')
-                ->distinct()
-                ->orderBy('table_name')
-                ->pluck('table_name')
-                ->toArray();
+            if (class_exists(\Illuminate\Support\Facades\Cache::class)) {
+                try {
+                    $cached = \Illuminate\Support\Facades\Cache::get('ua_filter_options');
+                    if (is_array($cached) && !empty($cached['tables'])) {
+                        return $cached;
+                    }
+                } catch (\Throwable) {
+                }
+            }
+
+            // Tables: Query distinct table names (limited to prevent huge sort buffers)
+            $tables = [];
+            try {
+                $tables = DB::table('user_activity_logs')
+                    ->whereNotNull('table_name')
+                    ->where('table_name', '!=', '')
+                    ->select('table_name')
+                    ->distinct()
+                    ->limit(150)
+                    ->pluck('table_name')
+                    ->toArray();
+                sort($tables);
+            } catch (\Throwable) {
+            }
 
             $tableOptions = [];
             foreach ($tables as $t) {
@@ -694,26 +742,45 @@ class UserActivityHandler extends Handler
                 ];
             }
 
-            $users = DB::table('user_activity_logs')
-                ->whereNotNull('user_id')
-                ->select('user_id', 'username', 'user_full_name')
-                ->distinct()
-                ->orderBy('username')
-                ->limit(300)
-                ->get();
-
+            // Users: Query directly from the users table (orders of magnitude faster than full audit log scan)
             $userOptions = [];
-            $seenUserIds = [];
-            foreach ($users as $u) {
-                if (isset($seenUserIds[$u->user_id])) {
-                    continue;
+            try {
+                $users = DB::table('users as u')
+                    ->leftJoin('user_settings as us_given', function ($j) {
+                        $j->on('u.user_id', '=', 'us_given.user_id')->where('us_given.setting_name', '=', 'givenName');
+                    })
+                    ->leftJoin('user_settings as us_family', function ($j) {
+                        $j->on('u.user_id', '=', 'us_family.user_id')->where('us_family.setting_name', '=', 'familyName');
+                    })
+                    ->select('u.user_id', 'u.username', 'us_given.setting_value as given_name', 'us_family.setting_value as family_name')
+                    ->orderBy('u.username')
+                    ->limit(300)
+                    ->get();
+
+                $seenUserIds = [];
+                foreach ($users as $u) {
+                    if (isset($seenUserIds[$u->user_id])) {
+                        continue;
+                    }
+                    $seenUserIds[$u->user_id] = true;
+                    $fullName = trim(($u->given_name ?? '') . ' ' . ($u->family_name ?? ''));
+                    $label = ($fullName ?: $u->username) . ($u->username ? " (@{$u->username})" : '') . " [#{$u->user_id}]";
+                    $userOptions[] = [
+                        'value' => $u->user_id,
+                        'label' => $label,
+                    ];
                 }
-                $seenUserIds[$u->user_id] = true;
-                $label = ($u->user_full_name ?: $u->username) . ($u->username ? " (@{$u->username})" : '') . " [#{$u->user_id}]";
-                $userOptions[] = [
-                    'value' => $u->user_id,
-                    'label' => $label,
-                ];
+            } catch (\Throwable) {
+                try {
+                    $basicUsers = DB::table('users')->select('user_id', 'username')->orderBy('username')->limit(300)->get();
+                    foreach ($basicUsers as $bu) {
+                        $userOptions[] = [
+                            'value' => $bu->user_id,
+                            'label' => "@{$bu->username} [#{$bu->user_id}]",
+                        ];
+                    }
+                } catch (\Throwable) {
+                }
             }
 
             $journals = [];
@@ -728,13 +795,21 @@ class UserActivityHandler extends Handler
             } catch (\Throwable) {
             }
 
-            return [
+            $result = [
                 'tables' => $tableOptions,
                 'users' => $userOptions,
                 'journals' => $journals,
             ];
-        } catch (\Throwable $e) {
-            UserActivityHelper::logError('getFilterOptions error', $e);
+
+            if (class_exists(\Illuminate\Support\Facades\Cache::class)) {
+                try {
+                    \Illuminate\Support\Facades\Cache::put('ua_filter_options', $result, 300);
+                } catch (\Throwable) {
+                }
+            }
+
+            return $result;
+        } catch (\Throwable) {
             return [
                 'tables' => [],
                 'users' => [],

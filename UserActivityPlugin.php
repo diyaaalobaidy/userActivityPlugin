@@ -394,6 +394,7 @@ class UserActivityPlugin extends GenericPlugin
                 $exportJsonUrl = $this->getPageUrl($request, 'exportJson');
 
                 $recentLogs = DB::table('user_activity_logs')
+                    ->select('created_at', 'user_full_name', 'username', 'operation', 'table_name', 'record_id', 'action_summary', 'ip_address')
                     ->orderByDesc('activity_id')
                     ->limit(10)
                     ->get();

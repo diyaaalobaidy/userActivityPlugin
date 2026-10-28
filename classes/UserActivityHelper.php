@@ -85,8 +85,29 @@ class UserActivityHelper
         }
 
         try {
+            if (class_exists(\Illuminate\Support\Facades\Cache::class)) {
+                try {
+                    if (\Illuminate\Support\Facades\Cache::get('ua_table_exists')) {
+                        self::$tableExistsCache = true;
+                        return true;
+                    }
+                } catch (\Throwable) {
+                }
+            }
+
             if (Schema::hasTable('user_activity_logs')) {
                 self::$tableExistsCache = true;
+                if (class_exists(\Illuminate\Support\Facades\Cache::class)) {
+                    try {
+                        \Illuminate\Support\Facades\Cache::put('ua_table_exists', true, 86400);
+                        // Ensure performance indexes exist once per cache cycle
+                        if (!\Illuminate\Support\Facades\Cache::get('ua_indexes_checked')) {
+                            migration\UserActivitySchemaMigration::ensurePerformanceIndexes();
+                            \Illuminate\Support\Facades\Cache::put('ua_indexes_checked', true, 86400);
+                        }
+                    } catch (\Throwable) {
+                    }
+                }
                 return true;
             }
 
@@ -94,6 +115,12 @@ class UserActivityHelper
             $migration->up();
 
             self::$tableExistsCache = Schema::hasTable('user_activity_logs');
+            if (self::$tableExistsCache && class_exists(\Illuminate\Support\Facades\Cache::class)) {
+                try {
+                    \Illuminate\Support\Facades\Cache::put('ua_table_exists', true, 86400);
+                } catch (\Throwable) {
+                }
+            }
             return self::$tableExistsCache;
         } catch (\Throwable $e) {
             self::logError('Failed ensuring user_activity_logs table exists', $e);
